@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSA Secure Terminal</title>
+<style>
+:root{
+  --green:#00ff41;
+  --darkgreen:#003300;
+}
+body{
+  margin:0;
+  background:#000;
+  color:var(--green);
+  font-family:"Courier New", monospace;
+  height:100vh;
+  overflow:hidden;
+}
+body::before{
+  content:"";
+  position:fixed;
+  top:50%;
+  left:50%;
+  width:500px;
+  height:500px;
+  background:url("https://upload.wikimedia.org/wikipedia/commons/5/5c/NSA_logo.svg") no-repeat center;
+  background-size:contain;
+  opacity:0.04;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  z-index:0;
+}
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background-image:linear-gradient(rgba(0,255,65,0.05) 1px, transparent 1px),
+                   linear-gradient(90deg, rgba(0,255,65,0.05) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+.panel{
+  border:2px solid var(--green);
+  background:rgba(0,30,0,0.7);
+  padding:10px;
+  overflow:auto;
+  box-shadow:0 0 15px rgba(0,255,65,0.2) inset;
+  position:absolute;
+  top:100px;
+  left:100px;
+  width:400px;
+  height:300px;
+  cursor:default;
+}
+.panel h3{
+  margin-top:0;
+  border-bottom:1px solid var(--green);
+  padding-bottom:5px;
+  cursor:move;
+}
+.appBtn{
+  display:block;
+  border:1px solid var(--green);
+  padding:8px;
+  margin-bottom:8px;
+  cursor:pointer;
+  text-align:center;
+  transition:0.2s;
+}
+.appBtn:hover{
+  background:var(--darkgreen);
+  box-shadow:0 0 8px var(--green);
+}
+#terminal, #missionTerminal, #crackerTerminal{
+  white-space:pre-wrap;
+  font-size:14px;
+  height:calc(100% - 60px);
+  overflow:auto;
+}
+.glow{text-shadow:0 0 6px var(--green);}
+.meme-popup{
+  position:fixed;
+  top:15%;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,0.9);
+  color:#ffcc00;
+  font-family:monospace;
+  font-size:18px;
+  border:1px solid var(--green);
+  padding:10px;
+  z-index:1001;
+  animation:fadeout 3s forwards;
+}
+@keyframes fadeout{0%{opacity:1;}100%{opacity:0;}}
+.progress-container{
+  width:100%;
+  background:#003300;
+  border:1px solid var(--green);
+  margin-top:5px;
+  height:10px;
+}
+.progress-bar{
+  width:0%;
+  height:100%;
+  background:var(--green);
+}
+#saveControls{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  z-index:9999;
+  display:flex;
+  gap:10px;
+}
+#saveControls button{cursor:pointer; padding:5px;}
+</style>
+</head>
+<body>
+
+<div class="panel" id="appPanel" style="top:20px; left:20px; width:200px; height:auto;">
+  <h3>Applications</h3>
+  <div class="appBtn" onclick="openApp('terminal')">Main Terminal</div>
+  <div class="appBtn" onclick="openApp('cracker')">Password Cracker</div>
+  <div class="appBtn" onclick="openApp('missions')">Target Missions</div>
+</div>
+
+<div class="panel" id="terminalPanel">
+  <h3>Main Terminal</h3>
+  <div id="terminal"></div>
+</div>
+
+<div class="panel" id="crackerPanel" style="top:150px; left:150px;">
+  <h3>Password Cracker</h3>
+  <div id="crackerTerminal">Cracking password automatically...</div>
+</div>
+
+<div class="panel" id="missionsPanel" style="top:200px; left:200px;">
+  <h3>Target Missions</h3>
+  <div id="missionTerminal">Press 1 for Russian Banks, 2 for Fort Knox, 3 for Mojang Studios</div>
+  <div class="progress-container"><div class="progress-bar" id="missionProgress"></div></div>
+</div>
+
+<!-- Save / Export Controls -->
+<div id="saveControls">
+  <button onclick="exportSave()">Export Save</button>
+  <input type="file" id="importFile" accept=".json" onchange="importSave(event)">
+</div>
+
+<audio id="beep1" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>
+<audio id="beep2" src="https://www.soundjay.com/button/beep-08.mp3" preload="auto"></audio>
+<audio id="beep3" src="https://www.soundjay.com/button/beep-09.mp3" preload="auto"></audio>
+
+<script>
+// --- Logs ---
+let terminalFullLog="", pointerTerminal=0;
+for(let i=0;i<4000;i++){terminalFullLog+="Decrypting node "+i+" ... OK\n";}
+let russianBankLog="", fortKnoxLog="", mojangLog="";
+for(let i=0;i<2000;i++){russianBankLog+="[Russian Banks] Node "+i+" ... OK\n";}
+for(let i=0;i<2000;i++){fortKnoxLog+="[Fort Knox] Vault "+i+" ... decrypted\n";}
+for(let i=0;i<2000;i++){mojangLog+="[Mojang Studios] Minecraft Server "+i+" ... loaded\n";}
+
+// --- Memes ---
+let memes=["Make Hackers Great Again!","Covfefe detected!","YUGE firewall bypass!","Fake news alert!","NSA Spotted!","Encryption Level 9000!","Keyboard Overload!","Phishing Alert!","Mission Critical!","Firewall Breached!","Virus Detected!","Hack the Planet!","Mega Firewall!","Top Secret Files!","Quantum Hack!","Cyber Ghost!","Data Leak!","Zero Day Alert!","Cyber Ninja!","Black Hat Zone!"];
+function shuffle(array){for(let i=array.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1)); [array[i],array[j]]=[array[j],array[i]];} return array;}
+memes = shuffle(memes);
+
+// --- Load progress from localStorage ---
+let memeIndex = 0, memeTimes = 0, missionProgress = 0;
+let terminalLogContent="", missionLogContent="";
+if(localStorage.getItem('nsaSave')){
+  try{
+    const saved = JSON.parse(localStorage.getItem('nsaSave'));
+    memeIndex=saved.memeIndex||0;
+    memeTimes=saved.memeTimes||0;
+    pointerTerminal=saved.pointerTerminal||0;
+    missionProgress=saved.missionProgress||0;
+    terminalLogContent=saved.terminalLog||"";
+    missionLogContent=saved.missionLog||"";
+    document.getElementById("terminal").textContent=terminalLogContent;
+    document.getElementById("missionTerminal").textContent=missionLogContent;
+    document.getElementById("missionProgress").style.width=(missionProgress*100)+"%";
+  }catch(e){}
+}
+
+// --- Meme per minute ---
+function memePerMinute(){
+  if(memeTimes>=90) return;
+  const div=document.createElement("div");
+  div.className="meme-popup";
+  div.style.top=(10+Math.random()*70)+"%";
+  div.style.left=(10+Math.random()*80)+"%";
+  div.textContent=memes[memeIndex % memes.length];
+  document.body.appendChild(div);
+  setTimeout(()=>div.remove(),3000);
+  memeIndex++;
+  memeTimes++;
+  saveProgress();
+  setTimeout(memePerMinute,60000);
+}
+memePerMinute();
+
+// --- Beeps ---
+const beeps=[document.getElementById("beep1"), document.getElementById("beep2"), document.getElementById("beep3")];
+function playRandomBeep(){ let b=beeps[Math.floor(Math.random()*beeps.length)]; b.currentTime=0; b.play(); }
+function scheduleBeep(){ const interval=Math.random()*90000+90000; setTimeout(()=>{ playRandomBeep(); scheduleBeep(); }, interval); }
+scheduleBeep();
+
+// --- Open App ---
+function openApp(app){
+  document.getElementById("terminalPanel").style.zIndex=app==="terminal"?10:1;
+  document.getElementById("crackerPanel").style.zIndex=app==="cracker"?10:1;
+  document.getElementById("missionsPanel").style.zIndex=app==="missions"?10:1;
+}
+
+// --- Terminal Typing ---
+document.addEventListener("keydown",e=>{
+  if(document.activeElement.tagName==="INPUT") return;
+  if(document.getElementById("terminalPanel").style.zIndex==10 && pointerTerminal<terminalFullLog.length){
+    const t=document.getElementById("terminal");
+    if(Math.random()<0.02){t.textContent+="█";}
+    const char = terminalFullLog[pointerTerminal++];
+    t.textContent+=char;
+    terminalLogContent+=char;
+    t.scrollTop=t.scrollHeight;
+    saveProgress();
+  }
+});
+
+// --- Missions ---
+function launchMission(log){
+  const t=document.getElementById("missionTerminal");
+  t.textContent="Launching mission...\n";
+  missionLogContent="Launching mission...\n";
+  let missionPointer=0;
+  const missionLength=log.length;
+  function step(){
+    if(missionPointer<log.length){
+      if(Math.random()<0.02){t.textContent+="█";}
+      const char = log[missionPointer++];
+      t.textContent+=char;
+      missionLogContent+=char;
+      t.scrollTop=t.scrollHeight;
+      missionProgress = missionPointer/missionLength;
+      document.getElementById("missionProgress").style.width=(missionProgress*100)+"%";
+      saveProgress();
+      requestAnimationFrame(step);
+    }
+  }
+  step();
+}
+document.addEventListener("keydown", e=>{
+  if(e.key==="1") launchMission(russianBankLog);
+  if(e.key==="2") launchMission(fortKnoxLog);
+  if(e.key==="3") launchMission(mojangLog);
+});
+
+// --- Draggable Panels ---
+const panels=document.querySelectorAll(".panel");
+panels.forEach(p=>{
+  let offsetX=0, offsetY=0, dragging=false;
+  const header=p.querySelector("h3");
+  header.addEventListener("mousedown", e=>{
+    dragging=true;
+    offsetX=e.clientX - p.offsetLeft;
+    offsetY=e.clientY - p.offsetTop;
+    p.style.zIndex=20;
+  });
+  document.addEventListener("mousemove", e=>{
+    if(dragging){p.style.left=e.clientX - offsetX + "px"; p.style.top=e.clientY - offsetY + "px";}
+  });
+  document.addEventListener("mouseup", e=>{dragging=false; p.style.zIndex=1;});
+});
+
+// --- Save / Export / Import ---
+function saveProgress(){
+  const saveData = {
+    memeIndex, memeTimes, pointerTerminal, missionProgress,
+    terminalLog: terminalLogContent,
+    missionLog: missionLogContent
+  };
+  localStorage.setItem('nsaSave', JSON.stringify(saveData));
+}
+
+function exportSave(){
+  const saveData = {
+    memeIndex, memeTimes, pointerTerminal, missionProgress,
+    terminalLog: terminalLogContent,
+    missionLog: missionLogContent
+  };
+  const blob = new Blob([JSON.stringify(saveData)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download="nsa_terminal_save.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importSave(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      memeIndex=data.memeIndex||0;
+      memeTimes=data.memeTimes||0;
+      pointerTerminal=data.pointerTerminal||0;
+      missionProgress=data.missionProgress||0;
+      terminalLogContent=data.terminalLog||"";
+      missionLogContent=data.missionLog||"";
+      document.getElementById("terminal").textContent=terminalLogContent;
+      document.getElementById("missionTerminal").textContent=missionLogContent;
+      document.getElementById("missionProgress").style.width=(missionProgress*100)+"%";
+      saveProgress();
+      alert("Save loaded successfully!");
+    }catch(err){alert("Invalid save file.");}
+  };
+  reader.readAsText(file);
+}
+</script>
+</body>
+</html>
