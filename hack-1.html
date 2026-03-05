@@ -2,123 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NSA Secure Terminal</title>
 <style>
-:root{
-  --green:#00ff41;
-  --darkgreen:#003300;
-}
-body{
-  margin:0;
-  background:#000;
-  color:var(--green);
-  font-family:"Courier New", monospace;
-  height:100vh;
-  overflow:hidden;
-}
-body::before{
-  content:"";
-  position:fixed;
-  top:50%;
-  left:50%;
-  width:500px;
-  height:500px;
-  background:url("https://upload.wikimedia.org/wikipedia/commons/5/5c/NSA_logo.svg") no-repeat center;
-  background-size:contain;
-  opacity:0.04;
-  transform:translate(-50%,-50%);
-  pointer-events:none;
-  z-index:0;
-}
-body::after{
-  content:"";
-  position:fixed;
-  inset:0;
-  background-image:linear-gradient(rgba(0,255,65,0.05) 1px, transparent 1px),
-                   linear-gradient(90deg, rgba(0,255,65,0.05) 1px, transparent 1px);
-  background-size:40px 40px;
-  pointer-events:none;
-  z-index:0;
-}
-.panel{
-  border:2px solid var(--green);
-  background:rgba(0,30,0,0.7);
-  padding:10px;
-  overflow:auto;
-  box-shadow:0 0 15px rgba(0,255,65,0.2) inset;
-  position:absolute;
-  top:100px;
-  left:100px;
-  width:400px;
-  height:300px;
-  cursor:default;
-}
-.panel h3{
-  margin-top:0;
-  border-bottom:1px solid var(--green);
-  padding-bottom:5px;
-  cursor:move;
-}
-.appBtn{
-  display:block;
-  border:1px solid var(--green);
-  padding:8px;
-  margin-bottom:8px;
-  cursor:pointer;
-  text-align:center;
-  transition:0.2s;
-}
-.appBtn:hover{
-  background:var(--darkgreen);
-  box-shadow:0 0 8px var(--green);
-}
-#terminal, #missionTerminal, #crackerTerminal{
-  white-space:pre-wrap;
-  font-size:14px;
-  height:calc(100% - 60px);
-  overflow:auto;
-}
-.glow{text-shadow:0 0 6px var(--green);}
-.meme-popup{
-  position:fixed;
-  top:15%;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,0.9);
-  color:#ffcc00;
-  font-family:monospace;
-  font-size:18px;
-  border:1px solid var(--green);
-  padding:10px;
-  z-index:1001;
-  animation:fadeout 3s forwards;
-}
-@keyframes fadeout{0%{opacity:1;}100%{opacity:0;}}
-.progress-container{
-  width:100%;
-  background:#003300;
-  border:1px solid var(--green);
-  margin-top:5px;
-  height:10px;
-}
-.progress-bar{
-  width:0%;
-  height:100%;
-  background:var(--green);
-}
-#saveControls{
-  position:fixed;
-  bottom:10px;
-  left:10px;
-  z-index:9999;
-  display:flex;
-  gap:10px;
-}
-#saveControls button{cursor:pointer; padding:5px;}
+body{margin:0;background:#000;color:#00ff41;font-family:monospace;overflow:hidden;}
+canvas{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-2;background:#000;}
+.panel{position:absolute;background:rgba(0,30,0,0.7);border:2px solid #00ff41;padding:10px;overflow:auto;box-shadow:0 0 15px rgba(0,255,65,0.2) inset;cursor:default;z-index:1;}
+.panel h3{margin:0 0 5px;cursor:move;border-bottom:1px solid #00ff41;padding-bottom:5px;}
+.appBtn{display:block;border:1px solid #00ff41;padding:8px;margin-bottom:8px;cursor:pointer;text-align:center;transition:.2s;}
+.appBtn:hover{background:#003300;box-shadow:0 0 8px #00ff41;}
+#terminal,#cracker,#missionTerminal{white-space:pre-wrap;font-size:14px;height:calc(100% - 60px);overflow:auto;}
+.meme-popup{position:fixed;top:15%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:#ffcc00;font-family:monospace;font-size:18px;border:1px solid #00ff41;padding:10px;z-index:1001;animation:fadeout 3s forwards;}
+@keyframes fadeout{0%{opacity:1}100%{opacity:0}}
+.progress-container{width:100%;background:#003300;border:1px solid #00ff41;height:10px;margin-top:5px;}
+.progress-bar{width:0%;height:100%;background:#00ff41;}
+#saveControls{position:fixed;bottom:10px;left:10px;z-index:9999;display:flex;gap:10px;}
+#saveControls button{cursor:pointer;padding:5px;}
+#devIndicator{position:fixed;top:5px;right:10px;color:#00ff00;font-family:monospace;font-size:12px;z-index:1000;}
 </style>
 </head>
 <body>
+
+<canvas id="nsaBG"></canvas>
+
+<div id="emblem"></div>
 
 <div class="panel" id="appPanel" style="top:20px; left:20px; width:200px; height:auto;">
   <h3>Applications</h3>
@@ -127,200 +33,141 @@ body::after{
   <div class="appBtn" onclick="openApp('missions')">Target Missions</div>
 </div>
 
-<div class="panel" id="terminalPanel">
+<div class="panel" id="terminalPanel" style="top:50px; left:250px; width:400px; height:300px;">
   <h3>Main Terminal</h3>
   <div id="terminal"></div>
 </div>
 
-<div class="panel" id="crackerPanel" style="top:150px; left:150px;">
+<div class="panel" id="crackerPanel" style="top:100px; left:700px; width:400px; height:300px;">
   <h3>Password Cracker</h3>
-  <div id="crackerTerminal">Cracking password automatically...</div>
+  <div id="cracker">Cracking password automatically...</div>
 </div>
 
-<div class="panel" id="missionsPanel" style="top:200px; left:200px;">
+<div class="panel" id="missionsPanel" style="top:200px; left:400px; width:400px; height:300px;">
   <h3>Target Missions</h3>
   <div id="missionTerminal">Press 1 for Russian Banks, 2 for Fort Knox, 3 for Mojang Studios</div>
   <div class="progress-container"><div class="progress-bar" id="missionProgress"></div></div>
 </div>
 
-<!-- Save / Export Controls -->
 <div id="saveControls">
   <button onclick="exportSave()">Export Save</button>
-  <input type="file" id="importFile" accept=".json" onchange="importSave(event)">
+  <input type="file" id="importFile" accept=".json" onchange="importSave(event)" style="display:none;">
+  <button onclick="resetGame()">Reset</button>
+  <button onclick="devLogin()">Dev Login</button>
 </div>
+
+<div id="devIndicator"></div>
 
 <audio id="beep1" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>
 <audio id="beep2" src="https://www.soundjay.com/button/beep-08.mp3" preload="auto"></audio>
 <audio id="beep3" src="https://www.soundjay.com/button/beep-09.mp3" preload="auto"></audio>
 
 <script>
-// --- Logs ---
-let terminalFullLog="", pointerTerminal=0;
+// ================== CANVAS BACKGROUND ==================
+(function(){
+const canvas = document.getElementById("nsaBG");
+const ctx = canvas.getContext("2d");
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;draw();}
+window.addEventListener("resize",resize);
+function draw(){
+  const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2,r=Math.min(w,h)*0.35;
+  ctx.fillStyle="#000";ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle="#00ff00";ctx.lineWidth=4;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,r*0.8,0,Math.PI*2);ctx.stroke();
+  for(let i=0;i<20;i++){let a=(Math.PI*2/20)*i,x=cx+Math.cos(a)*r*0.9,y=cy+Math.sin(a)*r*0.9;ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fillStyle="#00ff00";ctx.fill();}
+  // shield
+  ctx.beginPath();
+  ctx.moveTo(cx,cy-r*0.4);ctx.lineTo(cx+r*0.25,cy-r*0.1);ctx.lineTo(cx+r*0.18,cy+r*0.35);ctx.lineTo(cx,cy+r*0.5);
+  ctx.lineTo(cx-r*0.18,cy+r*0.35);ctx.lineTo(cx-r*0.25,cy-r*0.1);ctx.closePath();ctx.stroke();
+  // vertical stripes
+  for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(cx+i*10,cy-r*0.35);ctx.lineTo(cx+i*10,cy+r*0.4);ctx.stroke();}
+  // wings
+  ctx.beginPath();ctx.moveTo(cx-r*0.5,cy-r*0.05);ctx.lineTo(cx-r*0.2,cy-r*0.15);ctx.lineTo(cx,cy-r*0.05);ctx.lineTo(cx+r*0.2,cy-r*0.15);ctx.lineTo(cx+r*0.5,cy-r*0.05);ctx.stroke();
+  ctx.fillStyle="#00ff00";ctx.font=(r*0.12)+"px monospace";ctx.textAlign="center";
+  ctx.fillText("NATIONAL SECURITY AGENCY",cx,cy-r*0.95);ctx.fillText("UNITED STATES OF AMERICA",cx,cy+r*0.98);
+}
+resize();
+})();
+
+// ================== STATE ==================
+let state=JSON.parse(localStorage.getItem("nsa_terminal_save"))||{pointerTerminal:0,memeIndex:0,memeTimes:0,missionProgress:0,terminalLog:"",missionLog:"",dev:false};
+
+// ================== LOGS ==================
+let terminalFullLog="", russianBankLog="", fortKnoxLog="", mojangLog="", pentagonLog="";
 for(let i=0;i<4000;i++){terminalFullLog+="Decrypting node "+i+" ... OK\n";}
-let russianBankLog="", fortKnoxLog="", mojangLog="";
 for(let i=0;i<2000;i++){russianBankLog+="[Russian Banks] Node "+i+" ... OK\n";}
 for(let i=0;i<2000;i++){fortKnoxLog+="[Fort Knox] Vault "+i+" ... decrypted\n";}
 for(let i=0;i<2000;i++){mojangLog+="[Mojang Studios] Minecraft Server "+i+" ... loaded\n";}
+for(let i=0;i<2000;i++){pentagonLog+="[Pentagon] Network Node "+i+" ... hacked\n";}
 
-// --- Memes ---
+// ================== MEMES ==================
 let memes=["Make Hackers Great Again!","Covfefe detected!","YUGE firewall bypass!","Fake news alert!","NSA Spotted!","Encryption Level 9000!","Keyboard Overload!","Phishing Alert!","Mission Critical!","Firewall Breached!","Virus Detected!","Hack the Planet!","Mega Firewall!","Top Secret Files!","Quantum Hack!","Cyber Ghost!","Data Leak!","Zero Day Alert!","Cyber Ninja!","Black Hat Zone!"];
-function shuffle(array){for(let i=array.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1)); [array[i],array[j]]=[array[j],array[i]];} return array;}
-memes = shuffle(memes);
+function shuffle(array){for(let i=array.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[array[i],array[j]]=[array[j],array[i]];}return array;}
+memes=shuffle(memes);
 
-// --- Load progress from localStorage ---
-let memeIndex = 0, memeTimes = 0, missionProgress = 0;
-let terminalLogContent="", missionLogContent="";
-if(localStorage.getItem('nsaSave')){
-  try{
-    const saved = JSON.parse(localStorage.getItem('nsaSave'));
-    memeIndex=saved.memeIndex||0;
-    memeTimes=saved.memeTimes||0;
-    pointerTerminal=saved.pointerTerminal||0;
-    missionProgress=saved.missionProgress||0;
-    terminalLogContent=saved.terminalLog||"";
-    missionLogContent=saved.missionLog||"";
-    document.getElementById("terminal").textContent=terminalLogContent;
-    document.getElementById("missionTerminal").textContent=missionLogContent;
-    document.getElementById("missionProgress").style.width=(missionProgress*100)+"%";
-  }catch(e){}
+// ================== SAVE / EXPORT / IMPORT ==================
+function saveProgress(){localStorage.setItem('nsa_terminal_save',JSON.stringify(state));}
+function exportSave(){const blob=new Blob([JSON.stringify(state)],{type:"application/json"});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download="nsa_terminal_save.json";a.click();URL.revokeObjectURL(a);}
+function importSave(event){const file=event.target.files[0];if(!file) return; const reader=new FileReader(); reader.onload=function(e){try{state=JSON.parse(e.target.result);document.getElementById("terminal").textContent=state.terminalLog;document.getElementById("missionTerminal").textContent=state.missionLog;document.getElementById("missionProgress").style.width=(state.missionProgress*100)+"%";updateDevIndicator();saveProgress();alert("Save loaded");}catch(err){alert("Invalid save file");}}; reader.readAsText(file);}
+
+// ================== DEV MODE ==================
+function devLogin(){
+let user=prompt("USERNAME");let pass=prompt("PASSWORD");
+if(user==="trump-hater13" && pass==="13therepublic_illuminati"){state.dev=true;alert("DEV MODE ENABLED");updateDevIndicator();saveProgress();renderMissions();}else{alert("ACCESS DENIED");}
+}
+function updateDevIndicator(){document.getElementById("devIndicator").innerText=state.dev?"DEV MODE ACTIVE":"";}
+
+// ================== RESET ==================
+function resetGame(){if(confirm("Reset all progress?")){localStorage.removeItem("nsa_terminal_save");location.reload();}}
+
+// ================== APP WINDOWS ==================
+function openApp(app){
+document.getElementById("terminalPanel").style.zIndex=app==="terminal"?10:1;
+document.getElementById("crackerPanel").style.zIndex=app==="cracker"?10:1;
+document.getElementById("missionsPanel").style.zIndex=app==="missions"?10:1;
 }
 
-// --- Meme per minute ---
-function memePerMinute(){
-  if(memeTimes>=90) return;
-  const div=document.createElement("div");
-  div.className="meme-popup";
-  div.style.top=(10+Math.random()*70)+"%";
-  div.style.left=(10+Math.random()*80)+"%";
-  div.textContent=memes[memeIndex % memes.length];
-  document.body.appendChild(div);
-  setTimeout(()=>div.remove(),3000);
-  memeIndex++;
-  memeTimes++;
-  saveProgress();
-  setTimeout(memePerMinute,60000);
+// ================== TERMINAL TYPING ==================
+document.addEventListener("keydown",e=>{
+if(document.activeElement.tagName==="INPUT") return;
+if(document.getElementById("terminalPanel").style.zIndex==10 && state.pointerTerminal<terminalFullLog.length){
+const t=document.getElementById("terminal");const char=terminalFullLog[state.pointerTerminal++];t.textContent+=char;state.terminalLog+=char;t.scrollTop=t.scrollHeight;saveProgress();
 }
-memePerMinute();
+});
 
-// --- Beeps ---
-const beeps=[document.getElementById("beep1"), document.getElementById("beep2"), document.getElementById("beep3")];
-function playRandomBeep(){ let b=beeps[Math.floor(Math.random()*beeps.length)]; b.currentTime=0; b.play(); }
-function scheduleBeep(){ const interval=Math.random()*90000+90000; setTimeout(()=>{ playRandomBeep(); scheduleBeep(); }, interval); }
+// ================== MISSIONS ==================
+let currentMission=null;
+function startMission(log){
+const t=document.getElementById("missionTerminal");
+t.textContent="Launching mission...\n";state.missionLog="Launching mission...\n";
+let p=0;
+function step(){if(p<log.length){const char=log[p++];t.textContent+=char;state.missionLog+=char;t.scrollTop=t.scrollHeight;state.missionProgress=p/log.length;document.getElementById("missionProgress").style.width=(state.missionProgress*100)+"%";saveProgress();requestAnimationFrame(step);}}
+step();
+}
+
+// ================== MISSION BUTTONS ==================
+function renderMissions(){
+const container=document.getElementById("missionsPanel");
+container.innerHTML='<h3>Target Missions</h3><div id="missionTerminal">Press 1,2,3</div><div class="progress-container"><div class="progress-bar" id="missionProgress"></div></div>';
+if(state.dev){
+const btn=document.createElement("div");btn.className="appBtn";btn.style.color="#ff4444";btn.innerText="Pentagon Network (DEV)";btn.onclick=()=>startMission(pentagonLog);container.appendChild(btn);}
+}
+renderMissions();
+
+// ================== MEME GENERATOR ==================
+function memePerMinute(){if(state.memeTimes>=90) return;const div=document.createElement("div");div.className="meme-popup";div.style.top=(10+Math.random()*70)+"%";div.style.left=(10+Math.random()*80)+"%";div.textContent=memes[state.memeIndex % memes.length];document.body.appendChild(div);setTimeout(()=>div.remove(),3000);state.memeIndex++;state.memeTimes++;saveProgress();setTimeout(memePerMinute,60000);}
+setTimeout(memePerMinute,3000);
+
+// ================== BEEPS ==================
+const beeps=[document.getElementById("beep1"),document.getElementById("beep2"),document.getElementById("beep3")];
+function playRandomBeep(){let b=beeps[Math.floor(Math.random()*beeps.length)];b.currentTime=0;b.play();}
+function scheduleBeep(){const interval=Math.random()*90000+90000;setTimeout(()=>{playRandomBeep();scheduleBeep();},interval);}
 scheduleBeep();
 
-// --- Open App ---
-function openApp(app){
-  document.getElementById("terminalPanel").style.zIndex=app==="terminal"?10:1;
-  document.getElementById("crackerPanel").style.zIndex=app==="cracker"?10:1;
-  document.getElementById("missionsPanel").style.zIndex=app==="missions"?10:1;
-}
-
-// --- Terminal Typing ---
-document.addEventListener("keydown",e=>{
-  if(document.activeElement.tagName==="INPUT") return;
-  if(document.getElementById("terminalPanel").style.zIndex==10 && pointerTerminal<terminalFullLog.length){
-    const t=document.getElementById("terminal");
-    if(Math.random()<0.02){t.textContent+="█";}
-    const char = terminalFullLog[pointerTerminal++];
-    t.textContent+=char;
-    terminalLogContent+=char;
-    t.scrollTop=t.scrollHeight;
-    saveProgress();
-  }
-});
-
-// --- Missions ---
-function launchMission(log){
-  const t=document.getElementById("missionTerminal");
-  t.textContent="Launching mission...\n";
-  missionLogContent="Launching mission...\n";
-  let missionPointer=0;
-  const missionLength=log.length;
-  function step(){
-    if(missionPointer<log.length){
-      if(Math.random()<0.02){t.textContent+="█";}
-      const char = log[missionPointer++];
-      t.textContent+=char;
-      missionLogContent+=char;
-      t.scrollTop=t.scrollHeight;
-      missionProgress = missionPointer/missionLength;
-      document.getElementById("missionProgress").style.width=(missionProgress*100)+"%";
-      saveProgress();
-      requestAnimationFrame(step);
-    }
-  }
-  step();
-}
-document.addEventListener("keydown", e=>{
-  if(e.key==="1") launchMission(russianBankLog);
-  if(e.key==="2") launchMission(fortKnoxLog);
-  if(e.key==="3") launchMission(mojangLog);
-});
-
-// --- Draggable Panels ---
-const panels=document.querySelectorAll(".panel");
-panels.forEach(p=>{
-  let offsetX=0, offsetY=0, dragging=false;
-  const header=p.querySelector("h3");
-  header.addEventListener("mousedown", e=>{
-    dragging=true;
-    offsetX=e.clientX - p.offsetLeft;
-    offsetY=e.clientY - p.offsetTop;
-    p.style.zIndex=20;
-  });
-  document.addEventListener("mousemove", e=>{
-    if(dragging){p.style.left=e.clientX - offsetX + "px"; p.style.top=e.clientY - offsetY + "px";}
-  });
-  document.addEventListener("mouseup", e=>{dragging=false; p.style.zIndex=1;});
-});
-
-// --- Save / Export / Import ---
-function saveProgress(){
-  const saveData = {
-    memeIndex, memeTimes, pointerTerminal, missionProgress,
-    terminalLog: terminalLogContent,
-    missionLog: missionLogContent
-  };
-  localStorage.setItem('nsaSave', JSON.stringify(saveData));
-}
-
-function exportSave(){
-  const saveData = {
-    memeIndex, memeTimes, pointerTerminal, missionProgress,
-    terminalLog: terminalLogContent,
-    missionLog: missionLogContent
-  };
-  const blob = new Blob([JSON.stringify(saveData)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download="nsa_terminal_save.json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importSave(event){
-  const file = event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e){
-    try{
-      const data=JSON.parse(e.target.result);
-      memeIndex=data.memeIndex||0;
-      memeTimes=data.memeTimes||0;
-      pointerTerminal=data.pointerTerminal||0;
-      missionProgress=data.missionProgress||0;
-      terminalLogContent=data.terminalLog||"";
-      missionLogContent=data.missionLog||"";
-      document.getElementById("terminal").textContent=terminalLogContent;
-      document.getElementById("missionTerminal").textContent=missionLogContent;
-      document.getElementById("missionProgress").style.width=(missionProgress*100)+"%";
-      saveProgress();
-      alert("Save loaded successfully!");
-    }catch(err){alert("Invalid save file.");}
-  };
-  reader.readAsText(file);
-}
+// ================== DRAGGABLE PANELS ==================
+const panels=document.querySelectorAll(".panel");panels.forEach(p=>{let dx=0,dy=0,drag=false;const h=p.querySelector("h3");h.addEventListener("mousedown",e=>{drag=true;dx=e.clientX-p.offsetLeft;dy=e.clientY-p.offsetTop;p.style.zIndex=20;});document.addEventListener("mousemove",e=>{if(drag){p.style.left=e.clientX-dx+"px";p.style.top=e.clientY-dy+"px";}});document.addEventListener("mouseup",e=>{drag=false;p.style.zIndex=1;});});
 </script>
+
 </body>
 </html>
