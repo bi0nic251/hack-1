@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stark Secure Server</title>
+<style>
+body { background: #000; color: #0ff; font-family: "Courier New", monospace; padding: 20px;}
+.output { white-space: pre-wrap; line-height: 1.2em; }
+.link { color: #0f0; cursor: pointer; text-decoration: underline; }
+#input { background: #000; color: #0ff; border: none; font-family: "Courier New", monospace; font-size: 1em; outline: none; width: 80%; }
+</style>
+</head>
+<body>
+<h2>STARK SECURE SERVER</h2>
+<div class="output" id="terminal"></div>
+<input type="password" id="input" placeholder="Enter Password..." autofocus>
+<script>
+const terminal = document.getElementById("terminal");
+const input = document.getElementById("input");
+
+const PASSWORD = "!ronmanRox95";
+let attempts = 0;
+const MAX_ATTEMPTS = 3;
+
+// Player stats
+let player = {
+    hp: 100,
+    maxHp: 100,
+    energy: 100,
+    maxEnergy: 100,
+    damageMin: 5,
+    damageMax: 20,
+    armor: "Mark VI",
+    upgrades: [],
+    abilities: [],
+    aiLevel: 1,
+    dollars: 100.00 // Starting currency in dollars
+};
+
+// Progressive suit pool
+let suits = [];
+for (let i = 6; i <= 75; i++) {
+    suits.push({
+        id: i,
+        name: `Mark ${i}`,
+        hpBonus: Math.floor(Math.random()*30),
+        energyBonus: Math.floor(Math.random()*30),
+        damageBonusMin: Math.floor(Math.random()*5),
+        damageBonusMax: Math.floor(Math.random()*15),
+        ability: `Ability ${i}`,
+        unlocked: i === 6, // Only Mark VI starts unlocked
+        cost: parseFloat((50 + i*10 + Math.random()).toFixed(2)) // Cost in dollars with cents
+    });
+}
+
+// Bosses
+const bosses = [
+    {name:"Iron Monger",hp:120,attackMin:10,attackMax:20,tech:"Reinforced Armor Plating", unlockSuit: 15, aiUpgrade: 2, reward:100.50},
+    {name:"Whiplash",hp:90,attackMin:15,attackMax:25,tech:"Energy Whip Integration", unlockSuit: 35, aiUpgrade: 3, reward:150.25},
+    {name:"Killian",hp:150,attackMin:12,attackMax:22,tech:"Extremis Energy Core", unlockSuit: 47, aiUpgrade: 4, reward:200.75}
+];
+
+// 60 extra enemy types
+const extraEnemies = Array.from({length:60},(_,i)=>({
+    name:`Enemy Drone ${i+1}`,
+    hp: 20 + Math.floor(Math.random()*50),
+    attackMin: 3 + Math.floor(Math.random()*5),
+    attackMax: 5 + Math.floor(Math.random()*10),
+    tech: `Tech Module ${i+1}`,
+    reward: parseFloat((10 + Math.random()*20).toFixed(2))
+}));
+
+let currentEnemy = null;
+
+// Favorite suits links
+const favesuitsLinks = [
+    "https://marvelcinematicuniverse.fandom.com/wiki/Iron_Man_Armor:_Mark_VI",
+    "https://marvelcinematicuniverse.fandom.com/wiki/Iron_Man_Armor:_Mark_XV",
+    "https://marvelcinematicuniverse.fandom.com/wiki/Iron_Man_Armor:_Mark_XXXV",
+    "https://marvelcinematicuniverse.fandom.com/wiki/Iron_Man_Armor:_Mark_XLVII"
+];
+
+function sleep(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
+async function animateText(text, delay=50){ for(let c of text){ terminal.innerHTML+=c; await sleep(delay);} terminal.innerHTML+="\n"; }
+
+async function animatedLogin(){
+    terminal.innerHTML="";
+    await animateText("[Connecting to Stark Secure Server");
+    for(let i=0;i<5;i++){ terminal.innerHTML+="."; await sleep(400); }
+    terminal.innerHTML+="]\n";
+}
+
+async function authenticate(){
+    await animatedLogin();
+    terminal.innerHTML+="Enter Password: "; 
+    input.type="password"; 
+    input.focus();
+}
+
+async function startJarvis(){
+    input.type="text"; 
+    input.placeholder="J.A.R.V.I.S> Type commands here...";
+    await animateText("[Stark Secure Server Online]\n"); 
+    terminal.innerHTML+="Type 'help' to see commands.\n";
+    terminal.innerHTML+=`J.A.R.V.I.S Level: ${player.aiLevel} | Dollars: $${player.dollars.toFixed(2)}\n`;
+}
+
+// Login attempts
+input.addEventListener("keydown", async e=>{
+    if(e.key==="Enter" && input.type==="password"){
+        const userInput=input.value; input.value=""; attempts++;
+        if(userInput===PASSWORD){ 
+            await animateText("ACCESS GRANTED - Welcome Mr. Stark.\n"); 
+            startJarvis();
+        } else {
+            terminal.innerHTML+="ACCESS DENIED - UNAUTHORIZED USER\n"; 
+            if(attempts<MAX_ATTEMPTS){terminal.innerHTML+=`Attempt ${attempts} of ${MAX_ATTEMPTS}. Try again.\n`;} 
+            else {terminal.innerHTML+="MAX ATTEMPTS REACHED - TERMINAL LOCKED\n"; input.disabled=true;}
+        }
+    }
+});
+
+// Spawn random enemy (boss or extra)
+function spawnEnemy(isBoss=false){
+    if(currentEnemy) return;
+    if(isBoss){
+        currentEnemy = JSON.parse(JSON.stringify(bosses[Math.floor(Math.random()*bosses.length)]));
+    } else {
+        currentEnemy = JSON.parse(JSON.stringify(extraEnemies[Math.floor(Math.random()*extraEnemies.length)]));
+    }
+    terminal.innerHTML+=`\nAlert! Enemy Encounter: ${currentEnemy.name} (HP: ${currentEnemy.hp})\n`;
+}
+
+// Enemy attack
+function enemyAttack(){
+    if(currentEnemy && currentEnemy.hp>0){
+        let dmg = Math.floor(Math.random()*(currentEnemy.attackMax-currentEnemy.attackMin+1))+currentEnemy.attackMin;
+        player.hp = Math.max(0, player.hp-dmg);
+        terminal.innerHTML+=`${currentEnemy.name} attacks! You take ${dmg} damage. HP: ${player.hp}\n`;
+        if(player.hp<=0){ terminal.innerHTML+="You were defeated! Reload terminal.\n"; input.disabled=true; }
+    }
+}
+
+// Integrate tech into all suits
+function integrateTech(enemy){
+    const tech = enemy.tech;
+    terminal.innerHTML+=`You scanned and integrated '${tech}' into all suits!\n`;
+    player.upgrades.push(tech);
+    player.hp += 20; player.maxHp += 20;
+    player.energy += 20; player.maxEnergy += 20;
+    player.damageMin += 5; player.damageMax += 10;
+    player.dollars += enemy.reward; // Add currency
+    terminal.innerHTML+=`Earned $${enemy.reward.toFixed(2)}! Total: $${player.dollars.toFixed(2)}\n`;
+
+    // Apply tech to all suits
+    suits.forEach(s=>{
+        s.hpBonus += 5;
+        s.energyBonus +=5;
+        s.damageBonusMin += 2;
+        s.damageBonusMax += 3;
+        s.ability += ` + ${tech}`;
+    });
+
+    // Boss-specific unlocks
+    if(enemy.unlockSuit){
+        const suitToUnlock = suits.find(s=>s.id===enemy.unlockSuit);
+        if(suitToUnlock) suitToUnlock.unlocked = true;
+    }
+
+    // Boss AI upgrade
+    if(enemy.aiUpgrade && enemy.aiUpgrade>player.aiLevel){
+        player.aiLevel = enemy.aiUpgrade;
+        terminal.innerHTML+=`J.A.R.V.I.S upgraded to Level ${player.aiLevel}!\n`;
+    }
+
+    terminal.innerHTML+=`Player stats upgraded! HP: ${player.hp}/${player.maxHp}, Energy: ${player.energy}/${player.maxEnergy}, Damage: ${player.damageMin}-${player.damageMax}\n`;
+    currentEnemy = null;
+}
+
+// Command handler
+input.addEventListener("keydown", e=>{
+    if(e.key==="Enter" && input.type==="text"){
+        const cmd = input.value.trim(); input.value=""; 
+        if(!cmd) return;
+        terminal.innerHTML+=`J.A.R.V.I.S> ${cmd}\n`;
+        const args = cmd.split(" ");
+
+        switch(args[0].toLowerCase()){
+            case "help": 
+                terminal.innerHTML+="Commands: status, equip [suit #], attack, repair, rest, favesuits, build [suit #], spawnboss, spawnenemy, exit\n"; 
+                break;
+            case "status": 
+                terminal.innerHTML+=`HP: ${player.hp}/${player.maxHp}\nEnergy: ${player.energy}/${player.maxEnergy}\nDollars: $${player.dollars.toFixed(2)}\nEquipped Armor: ${player.armor}\nUpgrades: ${player.upgrades.join(", ") || "None"}\nAbilities: ${player.abilities.join(", ") || "None"}\nJ.A.R.V.I.S Level: ${player.aiLevel}\n`; 
+                break;
+            case "equip":
+                if(args[1] && !isNaN(args[1])){
+                    const suitNumber = parseInt(args[1]);
+                    const s = suits.find(s => s.id === suitNumber && s.unlocked);
+                    if(s){
+                        player.armor = s.name;
+                        player.hp += s.hpBonus; player.maxHp += s.hpBonus;
+                        player.energy += s.energyBonus; player.maxEnergy += s.energyBonus;
+                        player.damageMin += s.damageBonusMin; player.damageMax += s.damageBonusMax;
+                        player.abilities.push(s.ability);
+                        terminal.innerHTML+=`Equipped ${s.name} with ability: ${s.ability}. Stats upgraded!\n`;
+                    } else terminal.innerHTML+="Suit locked or invalid. Only unlocked suits can be equipped.\n";
+                } else terminal.innerHTML+="Choose a suit number.\n"; 
+                break;
+            case "rest": 
+                let heal=Math.floor(player.maxHp*0.3); 
+                player.hp=Math.min(player.maxHp,player.hp+heal); 
+                player.energy=Math.min(player.maxEnergy,player.energy+20); 
+                player.dollars += 5.50; // Passive income with cents
+                terminal.innerHTML+=`You rested. HP +${heal}, Energy +20, Earned $5.50. Total: $${player.dollars.toFixed(2)}\n`; 
+                break;
+            case "attack": 
+                if(!currentEnemy){ spawnEnemy(Math.random()<0.3); } 
+                let dmg=Math.floor(Math.random()*(player.damageMax-player.damageMin+1))+player.damageMin; 
+                currentEnemy.hp=Math.max(0,currentEnemy.hp-dmg); 
+                terminal.innerHTML+=`You attack ${currentEnemy.name} for ${dmg} damage! Enemy HP: ${currentEnemy.hp}\n`; 
+                if(currentEnemy.hp<=0){ 
+                    terminal.innerHTML+=`${currentEnemy.name} defeated!\n`; 
+                    integrateTech(currentEnemy); 
+                } else{ enemyAttack(); } 
+                break;
+            case "repair": 
+                let r=Math.floor(Math.random()*20)+10; 
+                player.hp=Math.min(player.maxHp,player.hp+r); 
+                terminal.innerHTML+=`Armor repaired by ${r} HP. Current HP: ${player.hp}\n`; 
+                break;
+            case "favesuits": 
+                favesuitsLinks.forEach((l,i)=>{terminal.innerHTML+=`${i+1}) <a href="${l}" target="_blank" class="link">${l}</a>\n`;}); 
+                break;
+            case "build":
+                if(args[1] && !isNaN(args[1])){
+                    const suitNumber = parseInt(args[1]);
+                    const s = suits.find(s => s.id === suitNumber);
+                    if(s && !s.unlocked){
+                        if(player.dollars >= s.cost){
+                            s.unlocked = true;
+                            player.dollars -= s.cost;
+                            terminal.innerHTML+=`Built and unlocked ${s.name} for $${s.cost.toFixed(2)}. Remaining Dollars: $${player.dollars.toFixed(2)}\n`;
+                        } else terminal.innerHTML+=`Not enough dollars to build ${s.name}. Cost: $${s.cost.toFixed(2)}, You have: $${player.dollars.toFixed(2)}\n`;
+                    } else terminal.innerHTML+="Suit already unlocked or invalid.\n";
+                } else terminal.innerHTML+="Choose a suit number to build.\n";
+                break;
+            case "spawnboss": spawnEnemy(true); break;
+            case "spawnenemy": spawnEnemy(false); break;
+            case "exit": terminal.innerHTML+="J.A.R.V.I.S> Exiting command mode...\n"; input.disabled=true; break;
+            default: terminal.innerHTML+="J.A.R.V.I.S> Unknown command. Type 'help'.\n";
+        }
+    }
+});
+
+authenticate();
+</script>
+</body>
+</html>
